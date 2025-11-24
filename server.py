@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from api.PyrionDrift import OrionDriftAPI
 import os
+from fastapi.responses import HTMLResponse
 
 app = FastAPI(
     title="PyrionDrift API Server",
@@ -52,6 +53,121 @@ def create_api_key(user_id: str):
 # ==============================
 # STATION ENDPOINTS
 # ==============================
+
+@app.get("/dev", response_class=HTMLResponse)
+def dev_page():
+    return """
+    <html>
+    <head>
+        <title>PyrionDrift Dev Panel</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #111;
+                color: #fff;
+                padding: 20px;
+            }
+            h1 {
+                color: #4ec9b0;
+            }
+            .section {
+                background: #1a1a1a;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+            }
+            input, textarea {
+                width: 100%;
+                padding: 10px;
+                margin: 5px 0;
+                background: #222;
+                color: white;
+                border: 1px solid #333;
+                border-radius: 6px;
+            }
+            button {
+                background: #4ec9b0;
+                color: #111;
+                padding: 10px 15px;
+                border: none;
+                font-size: 15px;
+                border-radius: 6px;
+                cursor: pointer;
+                margin-top: 10px;
+            }
+            button:hover {
+                background: #3ba18b;
+            }
+            pre {
+                background: #000;
+                padding: 15px;
+                border-radius: 6px;
+                overflow-x: auto;
+                max-height: 400px;
+            }
+        </style>
+
+        <script>
+            async function callEndpoint(method, url, body=null) {
+                let options = { method: method };
+                
+                if (body) {
+                    options.headers = {"Content-Type": "application/json"};
+                    options.body = JSON.stringify(JSON.parse(body));
+                }
+
+                const res = await fetch(url, options);
+                const text = await res.text();
+
+                document.getElementById("output").innerText = text;
+            }
+        </script>
+    </head>
+
+    <body>
+        <h1>PyrionDrift DEV PANEL</h1>
+
+        <div class="section">
+            <h2>Get User</h2>
+            User ID:
+            <input id="user_id" placeholder="Example: 123456789">
+            <button onclick="callEndpoint('GET', '/users/' + document.getElementById('user_id').value)">Fetch</button>
+        </div>
+
+        <div class="section">
+            <h2>Create Station</h2>
+            JSON Body:
+            <textarea id="station_body" rows="5">{ "name": "Test Station", "longitude": -73.9, "latitude": 40.7 }</textarea>
+            <button onclick="callEndpoint('POST', '/stations', document.getElementById('station_body').value)">Create</button>
+        </div>
+
+        <div class="section">
+            <h2>Ban User</h2>
+            Station ID:
+            <input id="ban_station" placeholder="Station ID">
+            User ID:
+            <input id="ban_user" placeholder="User ID">
+            Duration:
+            <input id="ban_duration" placeholder="Example: 1d">
+            Reason:
+            <input id="ban_reason" placeholder="Example: breaking rules">
+            <button onclick="
+                callEndpoint(
+                    'POST',
+                    '/stations/' + document.getElementById('ban_station').value +
+                    '/ban/' + document.getElementById('ban_user').value +
+                    '?duration=' + document.getElementById('ban_duration').value +
+                    '&reason=' + document.getElementById('ban_reason').value
+                )
+            ">Ban User</button>
+        </div>
+
+        <h2>Output</h2>
+        <pre id="output">Output will appear here…</pre>
+
+    </body>
+    </html>
+    """
 
 @app.get("/stations")
 def list_stations(include_config: bool = False, include_deployments: bool = False,
